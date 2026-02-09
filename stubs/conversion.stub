@@ -1,0 +1,96 @@
+<?php
+
+namespace App\BlackpigCreatif\ChambreNoir\Conversions;
+
+use BlackpigCreatif\ChambreNoir\Conversions\BaseConversion;
+
+class {{ class }} extends BaseConversion
+{
+    /**
+     * Default quality for conversions
+     */
+    protected int $defaultQuality = 85;
+
+    /**
+     * Define image conversions
+     *
+     * Tip: Define 2-3 sizes to cover different screen sizes and pixel densities
+     * - Small: ~400-600px (mobile 1x, or thumbnails)
+     * - Medium: ~1000-1200px (desktop 1x, mobile 2x retina)
+     * - Large: ~2000-2400px (desktop 2x retina, lightbox)
+     *
+     * The browser automatically picks the right size based on:
+     * 1. Display width (from sizes attribute)
+     * 2. Device pixel ratio (retina = 2x, high-end = 3x)
+     */
+    protected function define(): array
+    {
+        return [
+            'small' => [
+                'width' => 600,
+                'height' => 600,
+                'fit' => 'max',
+            ],
+
+            'medium' => [
+                'width' => 1200,
+                'height' => 1200,
+                'fit' => 'max',
+            ],
+
+            'large' => [
+                'width' => 2400,
+                'height' => 2400,
+                'fit' => 'max',
+            ],
+        ];
+    }
+
+    /**
+     * Configure responsive image behavior
+     *
+     * For most use cases (same image, different resolutions):
+     * - Use 'srcset' configuration with getImageWithSrcset()
+     * - Specify 'sizes' to tell browser how wide image displays
+     * - Browser handles pixel density automatically
+     *
+     * For art direction (different crops at different screen sizes):
+     * - Use 'picture' configuration with getPicture()
+     * - Define media queries for each crop
+     */
+    public function getResponsiveConfig(): array
+    {
+        return [
+            // Default fallback image (used as src attribute)
+            'default' => 'medium',
+
+            // Srcset: which conversions to include in srcset attribute
+            // Use this with $model->getImageWithSrcset('field')
+            'srcset' => [
+                'small' => true,
+                'medium' => true,
+                'large' => true,
+            ],
+
+            // Sizes: tells browser how wide the image displays on screen
+            // Format: "(media-query) display-width, fallback"
+            // Tip: Use viewport units (vw) for flexible layouts, or fixed px for containers
+            //
+            // Example: Image in a container that's 50% width on desktop, full width on mobile
+            'sizes' => '(min-width: 768px) 50vw, 100vw',
+
+            // Alternative examples:
+            // 'sizes' => '(min-width: 1024px) 800px, (min-width: 768px) 600px, 100vw',  // Fixed container widths
+            // 'sizes' => '100vw',  // Always full width
+            // 'sizes' => '(min-width: 768px) 33vw, 100vw',  // Gallery: 3 columns on desktop, 1 on mobile
+
+            // Picture element config (only needed for art direction)
+            // Leave as-is if you're not using getPicture()
+            'picture' => [
+                'large' => '(min-width: 1024px)',
+                'medium' => '(min-width: 768px)',
+                'small' => null, // Fallback
+            ],
+        ];
+    }
+}

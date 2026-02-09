@@ -1,0 +1,59 @@
+{
+    "name": "blackpig-creatif/chambre-noir",
+    "description": "Automatic image conversion and optimization for Filament FileUpload fields",
+    "keywords": [
+        "laravel",
+        "filament",
+        "image-conversion",
+        "image-processing",
+        "responsive-images"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Stuart Hallewell",
+            "email": "stuart@blackpig.eu"
+        }
+    ],
+    "require": {
+        "php": "^8.2|^8.3|^8.4",
+        "filament/filament": "^4.0|^5.0",
+        "illuminate/contracts": "^11.0|^12.0",
+        "intervention/image": "^3.0",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0",
+        "pestphp/pest": "^3.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BlackpigCreatif\\ChambreNoir\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BlackpigCreatif\\ChambreNoir\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BlackpigCreatif\\ChambreNoir\\ChambreNoirServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
