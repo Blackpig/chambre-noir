@@ -7,6 +7,7 @@ use BlackpigCreatif\ChambreNoir\Services\ConversionManager;
 use BlackpigCreatif\ChambreNoir\StateCasts\RetouchMediaUploadStateCast;
 use Closure;
 use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Arr;
 
 class RetouchMediaUpload extends FileUpload
 {
@@ -64,7 +65,63 @@ class RetouchMediaUpload extends FileUpload
         // Process conversions when form data is being prepared for saving (dehydration)
         // This runs AFTER FileUpload has done its work but BEFORE data is saved
         $this->dehydrateStateUsing(function ($state) {
-            // Get old data from the model record or block (before changes)
+            if (! $this->shouldConvert) {
+                return $state;
+            }
+
+            // Multiple file fields: process each file independently.
+            // Diff against old data to clean up deleted/replaced images.
+            if ($this->isMultiple()) {
+                $oldItems = $this->getOldMultipleImageData(); // keyed by original path
+
+                if (empty($state)) {
+                    // All images cleared — clean up everything
+                    foreach ($oldItems as $oldItem) {
+                        app(\BlackpigCreatif\ChambreNoir\Services\ImageCleanupService::class)
+                            ->cleanupSingleImage($oldItem, $this->getDiskName(), [
+                                'field' => $this->getName(),
+                                'action' => 'field_cleared',
+                            ]);
+                    }
+
+                    return [];
+                }
+
+                $newItems = collect(Arr::wrap($state))
+                    ->map(function ($item) {
+                        // Already a processed ChambreNoir structure (unchanged item on re-save)
+                        if (is_array($item) && isset($item['original'])) {
+                            return $item;
+                        }
+
+                        $filePath = is_string($item) ? $item : $this->extractFilePathFromState([$item]);
+
+                        return $filePath ? $this->processUploadedFilePath($filePath) : $item;
+                    })
+                    ->values();
+
+                // Any old original path not present in the new state was deleted or replaced
+                $newOriginals = $newItems
+                    ->filter(fn ($item) => is_array($item) && isset($item['original']))
+                    ->pluck('original')
+                    ->flip(); // flip for O(1) lookup
+
+                foreach ($oldItems as $oldOriginal => $oldItem) {
+                    if (! $newOriginals->has($oldOriginal)) {
+                        app(\BlackpigCreatif\ChambreNoir\Services\ImageCleanupService::class)
+                            ->cleanupSingleImage($oldItem, $this->getDiskName(), [
+                                'field' => $this->getName(),
+                                'action' => 'image_removed_from_collection',
+                            ]);
+                    }
+                }
+
+                return $newItems->all();
+            }
+
+            // --- Single file logic below ---
+
+            // Get old data from the model record (before changes)
             $oldImageData = $this->getOldImageData();
 
             // Handle deletion: if we had an image but now state is empty/null
@@ -74,11 +131,8 @@ class RetouchMediaUpload extends FileUpload
                     'field' => $this->getName(),
                     'action' => 'field_cleared',
                 ]);
-                return null;
-            }
 
-            if (! $this->shouldConvert) {
-                return $state;
+                return null;
             }
 
             // Skip if state is empty or already processed (array with conversions)
@@ -86,15 +140,25 @@ class RetouchMediaUpload extends FileUpload
                 return $state;
             }
 
-            // FileUpload returns data in different formats:
-            // - String path: "blocks/hero/image.jpg"
-            // - UUID array: {"uuid-here": "blocks/hero/image.jpg"}
-
             // Extract the actual file path from whatever format we receive
             $filePath = $this->extractFilePathFromState($state);
 
             if (! $filePath) {
                 return $state;
+            }
+
+            // If the extracted path matches the stored original, the image hasn't changed.
+            // Return the existing ChambreNoir data as-is — no cleanup, no reprocessing.
+            if ($oldImageData && ($oldImageData['original'] ?? null) === $filePath) {
+                $result = $oldImageData;
+
+                // Still update attribution in case it was edited without changing the image
+                if ($this->shouldShowAttribution()) {
+                    $attribution = $this->getAttributionData();
+                    $result['attribution'] = $attribution ?: null;
+                }
+
+                return $result;
             }
 
             // Handle replacement: if we had an old image and now processing a new one
@@ -497,6 +561,48 @@ class RetouchMediaUpload extends FileUpload
             // Graceful fallback: return original path
             return $filePath;
         }
+    }
+
+    /**
+     * Get old image data for a multiple-file field, keyed by original path for diffing.
+     *
+     * @return array<string, array> Map of original path => ChambreNoir image data
+     */
+    protected function getOldMultipleImageData(): array
+    {
+        $fieldName = $this->getName();
+        $record = $this->getRecord();
+
+        if (! $record || ! $fieldName || ! method_exists($record, 'getOriginal')) {
+            return [];
+        }
+
+        $oldValue = $record->getOriginal($fieldName);
+
+        if (empty($oldValue)) {
+            return [];
+        }
+
+        // Decode if stored as JSON string
+        if (is_string($oldValue)) {
+            $oldValue = json_decode($oldValue, true);
+        }
+
+        if (! is_array($oldValue)) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($oldValue as $item) {
+            $parsed = $this->parseImageData($item);
+
+            if ($parsed && isset($parsed['original'])) {
+                $result[$parsed['original']] = $parsed;
+            }
+        }
+
+        return $result;
     }
 
     /**
