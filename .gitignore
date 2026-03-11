@@ -1,33 +1,45 @@
-/vendor/
+# Dependencies
+vendor/
 node_modules/
-npm-debug.log
-yarn-error.log
+
+# Testing
+.phpunit.cache
+.phpunit.result.cache
+.pest
+phpunit.xml
+phpstan.neon
+testbench.yaml
+coverage
 
 # Laravel
-/.phpunit.cache
 .env
 .env.backup
 .env.production
-.phpunit.result.cache
+auth.json
 Homestead.json
 Homestead.yaml
-auth.json
+
+# Package managers / logs
 npm-debug.log
 yarn-error.log
 
+# Build & generated
+build/
+dist/
+
 # IDE
-/.idea
-/.vscode
+.idea
+.vscode
 *.swp
 *.swo
 *~
-.DS_Store
-/.claude
-/.cliignore
+
+# OS
+**/.DS_Store
+
+# Claude Code
+.claude
+.cliignore
 
 # Composer
 composer.lock
-
-# Build files
-/build
-/dist
