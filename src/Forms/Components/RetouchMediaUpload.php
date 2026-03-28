@@ -517,6 +517,26 @@ class RetouchMediaUpload extends FileUpload
      */
     protected function processUploadedFilePath(string $filePath): array|string
     {
+        // If Alpine's deferred $wire.entangle flushed the dehydrated snapshot string back
+        // during an HTML form submit (the primary "Create" button uses type="submit"),
+        // the TemporaryUploadedFile was overwritten with a plain 'livewire-file:xxx' string
+        // before saveUploadedFiles() ran. Recover it here by saving the temp file first.
+        if (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile::canUnserialize($filePath)) {
+            if (! ($callback = $this->saveUploadedFileUsing)) {
+                return $filePath;
+            }
+
+            $tempFile = \Livewire\Features\SupportFileUploads\TemporaryUploadedFile::unserializeFromLivewireRequest($filePath);
+            $permanentPath = $this->evaluate($callback, ['file' => $tempFile]);
+
+            if (! $permanentPath) {
+                return $filePath;
+            }
+
+            $tempFile->delete();
+            $filePath = $permanentPath;
+        }
+
         $conversions = $this->getConversions();
 
         if (empty($conversions)) {

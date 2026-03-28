@@ -106,4 +106,27 @@ return [
     | - fill: Fills dimensions, may crop to maintain aspect ratio
     |
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gallery Conversion Registry
+    |--------------------------------------------------------------------------
+    |
+    | Register your Conversion classes here with human-readable labels so that
+    | the Gallery resource presents a friendly select instead of raw FQNs.
+    |
+    | Example:
+    |
+    | 'conversions' => [
+    |     'gallery' => [
+    |         'label' => 'Gallery',
+    |         'class' => App\ChambreNoir\Conversions\GalleryConversion::class,
+    |     ],
+    | ],
+    |
+    | This key is intentionally absent from the base config so that existing
+    | published config files are unaffected. Always read via:
+    | config('chambre-noir.conversions', [])
+    |
+    */
 ];
