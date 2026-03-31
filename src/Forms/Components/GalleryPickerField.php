@@ -17,9 +17,7 @@ class GalleryPickerField extends Select
     {
         parent::setUp();
 
-        $this->relationship('galleries', 'title');
-
-        $this->modifyOptionsQueryUsing(function (Builder $query): Builder {
+        $this->relationship('galleries', 'title', function (Builder $query): Builder {
             $includeUnpublished = $this->evaluate($this->includeUnpublished);
 
             if (! $includeUnpublished) {

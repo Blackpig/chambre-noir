@@ -34,6 +34,18 @@ class ChambreNoirServiceProvider extends PackageServiceProvider
             ]);
     }
 
+    public function packageBooted(): void
+    {
+        if (class_exists(\BlackpigCreatif\Atelier\AtelierServiceProvider::class)) {
+            config([
+                'atelier.blocks' => array_merge(
+                    config('atelier.blocks', []),
+                    [\BlackpigCreatif\ChambreNoir\Atelier\GalleriesBlock::class],
+                ),
+            ]);
+        }
+    }
+
     public function packageRegistered(): void
     {
         // Register regeneration services
