@@ -1,8 +1,8 @@
 # ChambreNoir
 
-Automatic image conversion, responsive images, and attribution for FilamentPHP v4.
+Automatic image conversion, responsive images, attribution, and gallery management for FilamentPHP v5.
 
-ChambreNoir extends Filament's `FileUpload` with automatic image conversions on upload, responsive image rendering via `<picture>` and `srcset`, and built-in photographer attribution. No database tables, no model relationships -- just JSON stored in any column.
+ChambreNoir extends Filament's `FileUpload` with automatic image conversions on upload, responsive image rendering via `<picture>` and `srcset`, and built-in photographer attribution. The core upload feature stores JSON in any column with no additional tables. The optional Gallery system adds first-class entities for managing curated image collections.
 
 ---
 
@@ -372,6 +372,78 @@ $model->getAttributionName('image')  // string or null
 $model->getAttributionLink('image')  // string or null
 $model->hasAttribution('image')      // bool
 ```
+
+---
+
+## Gallery System
+
+ChambreNoir ships a full gallery management system built on top of three additional tables. Galleries are managed through a dedicated Filament resource, attached to any Eloquent model via a polymorphic pivot, and rendered on the frontend via either raw Blade helpers or the included Atelier block.
+
+### Migrations
+
+```bash
+php artisan vendor:publish --tag=chambre-noir-migrations
+php artisan migrate
+```
+
+This creates `galleries`, `gallery_images`, and `galleryables` tables.
+
+### Add the Relationship to Your Model
+
+`GalleryPickerField` writes to a polymorphic `galleryables` pivot. Add the relationship to any model that will hold gallery attachments:
+
+```php
+use BlackpigCreatif\ChambreNoir\Models\Gallery;
+
+class Page extends Model
+{
+    public function galleries(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->morphToMany(Gallery::class, 'galleryable')
+            ->withPivot('sort_order')
+            ->orderBy('galleryables.sort_order');
+    }
+}
+```
+
+### Attach Galleries in a Form
+
+```php
+use BlackpigCreatif\ChambreNoir\Forms\Components\GalleryPickerField;
+
+GalleryPickerField::make('galleries')
+    ->multiple()
+```
+
+By default only active (published) galleries are shown. Options:
+
+```php
+// Include unpublished galleries
+GalleryPickerField::make('galleries')
+    ->multiple()
+    ->unpublished()
+
+// Restrict to a specific conversion preset
+GalleryPickerField::make('galleries')
+    ->multiple()
+    ->conversion('product')
+```
+
+### Render in Blade
+
+```blade
+@foreach($page->galleries as $gallery)
+    @foreach($gallery->images as $image)
+        {!! $image->getPicture('image', ['alt' => $image->caption ?? '']) !!}
+    @endforeach
+@endforeach
+```
+
+### Atelier Block
+
+If [Atelier](https://github.com/blackpig-creatif/atelier) is installed, a `GalleriesBlock` is registered automatically. It supports grid and carousel display, combined or tabbed multi-gallery modes, and an optional lightbox — all driven by Alpine.js with no additional dependencies.
+
+See [Gallery System](docs/galleries.md) for the full reference.
 
 ---
 

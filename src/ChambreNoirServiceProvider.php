@@ -22,10 +22,28 @@ class ChambreNoirServiceProvider extends PackageServiceProvider
             ->name(static::$name)
             ->hasConfigFile()
             ->hasViews()
+            ->hasMigrations([
+                '2026_03_28_000001_create_galleries_table',
+                '2026_03_28_000002_create_gallery_images_table',
+                '2026_03_28_000003_create_galleryables_table',
+            ])
+            ->runsMigrations()
             ->hasCommands([
                 MakeChambreNoirConversion::class,
                 RegenerateChambreNoirImages::class,
             ]);
+    }
+
+    public function packageBooted(): void
+    {
+        if (class_exists(\BlackpigCreatif\Atelier\AtelierServiceProvider::class)) {
+            config([
+                'atelier.blocks' => array_merge(
+                    config('atelier.blocks', []),
+                    [\BlackpigCreatif\ChambreNoir\Atelier\GalleriesBlock::class],
+                ),
+            ]);
+        }
     }
 
     public function packageRegistered(): void
