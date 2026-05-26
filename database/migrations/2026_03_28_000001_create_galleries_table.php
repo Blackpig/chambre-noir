@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('galleries', function (Blueprint $table): void {
             $table->id();
-            $table->string('title');
+            $table->json('title');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->string('conversion')->nullable();

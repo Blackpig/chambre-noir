@@ -26,6 +26,7 @@ class ChambreNoirServiceProvider extends PackageServiceProvider
                 '2026_03_28_000001_create_galleries_table',
                 '2026_03_28_000002_create_gallery_images_table',
                 '2026_03_28_000003_create_galleryables_table',
+                '2026_05_26_000001_make_gallery_titles_translatable',
             ])
             ->runsMigrations()
             ->hasCommands([

@@ -12,6 +12,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -28,11 +30,25 @@ class GalleryResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('title')
-                ->required()
-                ->live(onBlur: true)
-                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? ''))
-                ),
+            Tabs::make('Locales')
+                ->tabs([
+                    Tab::make('English')
+                        ->schema([
+                            TextInput::make('title_en')
+                                ->label('Title')
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? '')))
+                                ->maxLength(255),
+                        ]),
+                    Tab::make('Français')
+                        ->schema([
+                            TextInput::make('title_fr')
+                                ->label('Title')
+                                ->maxLength(255),
+                        ]),
+                ])
+                ->columnSpanFull(),
 
             TextInput::make('slug')
                 ->required()
