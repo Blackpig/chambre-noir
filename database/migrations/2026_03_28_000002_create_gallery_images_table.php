@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('gallery_id')->constrained()->cascadeOnDelete();
             $table->json('image');
-            $table->string('caption')->nullable();
+            $table->json('caption')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
         });

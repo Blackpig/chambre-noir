@@ -7,9 +7,12 @@ use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Spatie\Translatable\HasTranslations;
 
 class Gallery extends Model
 {
+    use HasTranslations;
+
     protected $fillable = [
         'title',
         'slug',
@@ -18,6 +21,9 @@ class Gallery extends Model
         'panel',
         'is_active',
     ];
+
+    /** @var array<int, string> */
+    public array $translatable = ['title'];
 
     protected $casts = [
         'is_active' => 'boolean',
@@ -47,7 +53,7 @@ class Gallery extends Model
         });
 
         static::creating(function (Gallery $gallery): void {
-            $gallery->slug ??= Str::slug($gallery->title);
+            $gallery->slug ??= Str::slug((string) ($gallery->getTranslation('title', 'en', false) ?: $gallery->getTranslation('title', 'fr', false)));
 
             try {
                 $gallery->panel ??= Filament::getCurrentPanel()?->getId();

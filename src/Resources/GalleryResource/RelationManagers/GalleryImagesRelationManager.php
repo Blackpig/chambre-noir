@@ -11,9 +11,11 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextInputColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class GalleryImagesRelationManager extends RelationManager
@@ -44,8 +46,22 @@ class GalleryImagesRelationManager extends RelationManager
                 ->required()
                 ->columnSpanFull(),
 
-            TextInput::make('caption')
-                ->nullable(),
+            Tabs::make('Locales')
+                ->tabs([
+                    Tab::make('English')
+                        ->schema([
+                            TextInput::make('caption_en')
+                                ->label('Caption')
+                                ->nullable(),
+                        ]),
+                    Tab::make('Français')
+                        ->schema([
+                            TextInput::make('caption_fr')
+                                ->label('Caption')
+                                ->nullable(),
+                        ]),
+                ])
+                ->columnSpanFull(),
         ]);
     }
 
@@ -61,14 +77,35 @@ class GalleryImagesRelationManager extends RelationManager
                     ->square()
                     ->size(60),
 
-                TextInputColumn::make('caption')
+                TextColumn::make('caption')
+                    ->getStateUsing(fn (GalleryImage $record): string => $record->getTranslation('caption', 'en', false) ?: '')
                     ->placeholder('No caption'),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->mutateFormDataUsing(function (array $data): array {
+                        $data['caption'] = ['en' => $data['caption_en'] ?? null, 'fr' => $data['caption_fr'] ?? null];
+
+                        unset($data['caption_en'], $data['caption_fr']);
+
+                        return $data;
+                    }),
             ])
             ->actions([
-                EditAction::make(),
+                EditAction::make()
+                    ->mutateRecordDataUsing(function (array $data, GalleryImage $record): array {
+                        $data['caption_en'] = $record->getTranslation('caption', 'en', false);
+                        $data['caption_fr'] = $record->getTranslation('caption', 'fr', false);
+
+                        return $data;
+                    })
+                    ->mutateFormDataUsing(function (array $data): array {
+                        $data['caption'] = ['en' => $data['caption_en'] ?? null, 'fr' => $data['caption_fr'] ?? null];
+
+                        unset($data['caption_en'], $data['caption_fr']);
+
+                        return $data;
+                    }),
                 DeleteAction::make(),
             ])
             ->bulkActions([

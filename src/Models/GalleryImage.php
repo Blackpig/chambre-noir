@@ -6,10 +6,12 @@ use BlackpigCreatif\ChambreNoir\Concerns\HasRetouchMedia;
 use BlackpigCreatif\ChambreNoir\Services\ImageCleanupService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Translatable\HasTranslations;
 
 class GalleryImage extends Model
 {
     use HasRetouchMedia;
+    use HasTranslations;
 
     protected $fillable = [
         'gallery_id',
@@ -17,6 +19,9 @@ class GalleryImage extends Model
         'caption',
         'sort_order',
     ];
+
+    /** @var array<int, string> */
+    public array $translatable = ['caption'];
 
     protected $casts = [
         'image' => 'array',
