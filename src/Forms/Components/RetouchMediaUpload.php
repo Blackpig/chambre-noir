@@ -27,7 +27,7 @@ class RetouchMediaUpload extends FileUpload
      * Override hydrateState to cache attribution data BEFORE StateCast transformation
      * This is the earliest point where we can intercept the ChambreNoir JSON structure
      */
-    public function hydrateState(?array &$hydratedDefaultState, bool $shouldCallHydrationHooks = true): void
+    public function hydrateState(?array &$hydratedDefaultState, bool $shouldCallHydrationHooks = true, bool $shouldApplyStateCasts = true, array &$appliedStateCastPaths = []): void
     {
         // Get the raw state from Livewire BEFORE any transformations
         $rawState = $this->getRawState();
@@ -40,7 +40,7 @@ class RetouchMediaUpload extends FileUpload
         }
 
         // Let parent handle the rest (including StateCast transformation)
-        parent::hydrateState($hydratedDefaultState, $shouldCallHydrationHooks);
+        parent::hydrateState($hydratedDefaultState, $shouldCallHydrationHooks, $shouldApplyStateCasts, $appliedStateCastPaths);
     }
 
     protected function setUp(): void
