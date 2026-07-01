@@ -64,22 +64,30 @@ class RetouchMediaUpload extends FileUpload
 
         // Process conversions when form data is being prepared for saving (dehydration)
         // This runs AFTER FileUpload has done its work but BEFORE data is saved
-        $this->dehydrateStateUsing(function ($state) {
-            if (! $this->shouldConvert) {
+        //
+        // IMPORTANT: use the injected $component parameter rather than $this. PHP closures
+        // capture $this at setUp() time (the original template component). When this field
+        // lives inside a Filament Repeater, cloneComponents() mutates the original's
+        // $container property on every iteration, leaving it pointing to the last item's
+        // schema — so all closure invocations would share that one record. Filament injects
+        // the per-item clone as $component (matched via evaluationIdentifier / type hint),
+        // giving each closure the correct container and therefore the correct getRecord().
+        $this->dehydrateStateUsing(function ($state, RetouchMediaUpload $component) {
+            if (! $component->shouldConvert) {
                 return $state;
             }
 
             // Multiple file fields: process each file independently.
             // Diff against old data to clean up deleted/replaced images.
-            if ($this->isMultiple()) {
-                $oldItems = $this->getOldMultipleImageData(); // keyed by original path
+            if ($component->isMultiple()) {
+                $oldItems = $component->getOldMultipleImageData(); // keyed by original path
 
                 if (empty($state)) {
                     // All images cleared — clean up everything
                     foreach ($oldItems as $oldItem) {
                         app(\BlackpigCreatif\ChambreNoir\Services\ImageCleanupService::class)
-                            ->cleanupSingleImage($oldItem, $this->getDiskName(), [
-                                'field' => $this->getName(),
+                            ->cleanupSingleImage($oldItem, $component->getDiskName(), [
+                                'field' => $component->getName(),
                                 'action' => 'field_cleared',
                             ]);
                     }
@@ -88,15 +96,15 @@ class RetouchMediaUpload extends FileUpload
                 }
 
                 $newItems = collect(Arr::wrap($state))
-                    ->map(function ($item) {
+                    ->map(function ($item) use ($component) {
                         // Already a processed ChambreNoir structure (unchanged item on re-save)
                         if (is_array($item) && isset($item['original'])) {
                             return $item;
                         }
 
-                        $filePath = is_string($item) ? $item : $this->extractFilePathFromState([$item]);
+                        $filePath = is_string($item) ? $item : $component->extractFilePathFromState([$item]);
 
-                        return $filePath ? $this->processUploadedFilePath($filePath) : $item;
+                        return $filePath ? $component->processUploadedFilePath($filePath) : $item;
                     })
                     ->values();
 
@@ -109,8 +117,8 @@ class RetouchMediaUpload extends FileUpload
                 foreach ($oldItems as $oldOriginal => $oldItem) {
                     if (! $newOriginals->has($oldOriginal)) {
                         app(\BlackpigCreatif\ChambreNoir\Services\ImageCleanupService::class)
-                            ->cleanupSingleImage($oldItem, $this->getDiskName(), [
-                                'field' => $this->getName(),
+                            ->cleanupSingleImage($oldItem, $component->getDiskName(), [
+                                'field' => $component->getName(),
                                 'action' => 'image_removed_from_collection',
                             ]);
                     }
@@ -122,13 +130,13 @@ class RetouchMediaUpload extends FileUpload
             // --- Single file logic below ---
 
             // Get old data from the model record (before changes)
-            $oldImageData = $this->getOldImageData();
+            $oldImageData = $component->getOldImageData();
 
             // Handle deletion: if we had an image but now state is empty/null
             if (empty($state) && $oldImageData) {
                 $cleanupService = app(\BlackpigCreatif\ChambreNoir\Services\ImageCleanupService::class);
-                $cleanupService->cleanupSingleImage($oldImageData, $this->getDiskName(), [
-                    'field' => $this->getName(),
+                $cleanupService->cleanupSingleImage($oldImageData, $component->getDiskName(), [
+                    'field' => $component->getName(),
                     'action' => 'field_cleared',
                 ]);
 
@@ -141,7 +149,7 @@ class RetouchMediaUpload extends FileUpload
             }
 
             // Extract the actual file path from whatever format we receive
-            $filePath = $this->extractFilePathFromState($state);
+            $filePath = $component->extractFilePathFromState($state);
 
             if (! $filePath) {
                 return $state;
@@ -153,8 +161,8 @@ class RetouchMediaUpload extends FileUpload
                 $result = $oldImageData;
 
                 // Still update attribution in case it was edited without changing the image
-                if ($this->shouldShowAttribution()) {
-                    $attribution = $this->getAttributionData();
+                if ($component->shouldShowAttribution()) {
+                    $attribution = $component->getAttributionData();
                     $result['attribution'] = $attribution ?: null;
                 }
 
@@ -164,18 +172,18 @@ class RetouchMediaUpload extends FileUpload
             // Handle replacement: if we had an old image and now processing a new one
             if ($oldImageData) {
                 $cleanupService = app(\BlackpigCreatif\ChambreNoir\Services\ImageCleanupService::class);
-                $cleanupService->cleanupSingleImage($oldImageData, $this->getDiskName(), [
-                    'field' => $this->getName(),
+                $cleanupService->cleanupSingleImage($oldImageData, $component->getDiskName(), [
+                    'field' => $component->getName(),
                     'action' => 'image_replaced',
                 ]);
             }
 
             // Process this file and create conversions
-            $result = $this->processUploadedFilePath($filePath);
+            $result = $component->processUploadedFilePath($filePath);
 
             // Merge attribution data if enabled and result is array
-            if ($this->shouldShowAttribution() && is_array($result)) {
-                $attribution = $this->getAttributionData();
+            if ($component->shouldShowAttribution() && is_array($result)) {
+                $attribution = $component->getAttributionData();
                 if ($attribution) {
                     $result['attribution'] = $attribution;
                 }
