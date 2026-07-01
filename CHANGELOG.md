@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.2.2 — 2026-07-01
+
+### Fixed
+
+- `dehydrateStateUsing` closure now uses Filament's injected `$component` parameter instead of the captured `$this`. When `RetouchMediaUpload` is inside a Filament Repeater, `cloneComponents()` mutates the original component's `$container` on every iteration, leaving all closures pointing to the last item's record — causing the last-uploaded image's files to be deleted by the other items' cleanup logic. The injected `$component` is the correct per-item clone, so cleanup and conversion now target the right record in all cases
+
 ## v2.2.0 — 2026-05-26
 
 ### Added
