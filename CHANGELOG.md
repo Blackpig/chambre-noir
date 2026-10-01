@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Replacing a single image no longer deletes the current image before its replacement exists. The new file is processed first, and the old files are only removed once processing has produced a real image. Previously, a save from a form opened before the image last changed (a second browser tab, or a tab that was not reloaded) still held the previous path; ChambreNoir treated it as a new upload, deleted the current files, then found the old file missing and stored the bare dead path, leaving a broken image. A failed conversion had the same effect. Both now keep the current image and log a warning (`ChambreNoir: Kept the current image, the replacement could not be processed`)
+
 ## v2.2.2 — 2026-07-01
 
 ### Fixed
