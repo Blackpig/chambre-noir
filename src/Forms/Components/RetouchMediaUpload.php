@@ -169,17 +169,29 @@ class RetouchMediaUpload extends FileUpload
                 return $result;
             }
 
-            // Handle replacement: if we had an old image and now processing a new one
+            // Process the new file before touching the old one, so the current image is only
+            // deleted once its replacement really exists. A form that was opened before the
+            // image last changed (a second browser tab, say) still holds the previous path,
+            // whose files are gone: processing it fails, and the current image must survive.
+            $result = $component->processUploadedFilePath($filePath);
+
             if ($oldImageData) {
+                if (! $component->isStoredImage($result)) {
+                    \Log::warning('ChambreNoir: Kept the current image, the replacement could not be processed', [
+                        'field' => $component->getName(),
+                        'replacement' => $filePath,
+                        'kept' => $oldImageData['original'] ?? null,
+                    ]);
+
+                    return $oldImageData;
+                }
+
                 $cleanupService = app(\BlackpigCreatif\ChambreNoir\Services\ImageCleanupService::class);
                 $cleanupService->cleanupSingleImage($oldImageData, $component->getDiskName(), [
                     'field' => $component->getName(),
                     'action' => 'image_replaced',
                 ]);
             }
-
-            // Process this file and create conversions
-            $result = $component->processUploadedFilePath($filePath);
 
             // Merge attribution data if enabled and result is array
             if ($component->shouldShowAttribution() && is_array($result)) {
@@ -517,6 +529,21 @@ class RetouchMediaUpload extends FileUpload
         }
 
         return null;
+    }
+
+    /**
+     * Whether processing produced a real image: ChambreNoir data, or (for a field
+     * without conversions) a path to a file that exists. processUploadedFilePath()
+     * falls back to returning the bare path when the file is missing or conversion
+     * fails, which must not count as a successful replacement.
+     */
+    protected function isStoredImage(array|string $result): bool
+    {
+        if (is_array($result)) {
+            return isset($result['original']);
+        }
+
+        return \Storage::disk($this->getDiskName())->exists($result);
     }
 
     /**
