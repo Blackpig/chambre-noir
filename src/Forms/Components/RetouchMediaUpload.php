@@ -7,6 +7,8 @@ use BlackpigCreatif\ChambreNoir\Services\ConversionManager;
 use BlackpigCreatif\ChambreNoir\StateCasts\RetouchMediaUploadStateCast;
 use Closure;
 use Filament\Forms\Components\FileUpload;
+use Filament\Support\Enums\VerticalAlignment;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Arr;
 
 class RetouchMediaUpload extends FileUpload
@@ -50,9 +52,6 @@ class RetouchMediaUpload extends FileUpload
         // RetouchMediaUpload is image-only - enforce at component level
         $this->image();
         $this->acceptedFileTypes(['image/*']);
-
-        // Use custom view with attribution fields
-        $this->view('chambre-noir::components.retouch-media-upload');
 
         // Populate attribution fields (image data is cached in hydrateState)
         $this->afterStateHydrated(function () {
@@ -334,6 +333,32 @@ class RetouchMediaUpload extends FileUpload
         $this->shouldConvert = false;
 
         return $this;
+    }
+
+    /**
+     * @param  array<string, mixed>  $extraWrapperAttributes
+     */
+    public function wrapEmbeddedHtml(
+        string $html,
+        array $extraWrapperAttributes = [],
+        ?VerticalAlignment $inlineLabelVerticalAlignment = null,
+        string|Htmlable|null $labelPrefix = null,
+        string|Htmlable|null $labelSuffix = null,
+        string $labelTag = 'label',
+    ): string {
+        // Filament renders FileUpload inline and its JS config changes between releases,
+        // so we append to Filament's own markup rather than keeping a copy of it.
+        if ($this->shouldShowAttribution()) {
+            $html .= view('chambre-noir::components.attribution-fields', [
+                'id' => $this->getId(),
+                'statePath' => $this->getStatePath(),
+                'isDisabled' => $this->isDisabled(),
+                'isNameRequired' => $this->isAttributionNameRequired(),
+                'isLinkRequired' => $this->isAttributionLinkRequired(),
+            ])->render();
+        }
+
+        return parent::wrapEmbeddedHtml($html, $extraWrapperAttributes, $inlineLabelVerticalAlignment, $labelPrefix, $labelSuffix, $labelTag);
     }
 
     /**

@@ -1,6 +1,6 @@
 # ChambreNoir
 
-Automatic image conversion, responsive images, and attribution for FilamentPHP v4.
+Automatic image conversion, responsive images, and attribution for FilamentPHP v5.
 
 ChambreNoir extends Filament's `FileUpload` with automatic image conversions on upload, responsive image rendering via `<picture>` and `srcset`, and built-in photographer attribution. No database tables, no model relationships -- just JSON stored in any column.
 
@@ -10,7 +10,7 @@ ChambreNoir extends Filament's `FileUpload` with automatic image conversions on 
 
 - PHP 8.2+
 - Laravel 11+ / 12+
-- FilamentPHP 4+ / 5+
+- FilamentPHP 5.12+
 - Imagick PHP extension
 - Intervention Image 3.x
 
