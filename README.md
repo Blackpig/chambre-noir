@@ -10,7 +10,7 @@ ChambreNoir extends Filament's `FileUpload` with automatic image conversions on 
 
 - PHP 8.2+
 - Laravel 11+ / 12+
-- FilamentPHP 4+ / 5+
+- FilamentPHP 5.12+
 - Imagick PHP extension
 - Intervention Image 3.x
 

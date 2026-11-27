@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- `RetouchMediaUpload` uploads failed on Filament 5.12 with `Property [$undefined] not found on component`. The component shipped a copy of Filament's old file-upload Blade view, and Filament 5.12 moved FileUpload to inline rendering with a new JS config: the upload path is now built from a `statePath` key the copied view never passed, so files were uploaded to `undefined.<key>`. The copied view is gone. `RetouchMediaUpload` now renders through Filament's own markup and appends the attribution inputs in `wrapEmbeddedHtml()`, so Filament changes to the upload component no longer break it. Requires `filament/filament` ^5.12
 - Replacing a single image no longer deletes the current image before its replacement exists. The new file is processed first, and the old files are only removed once processing has produced a real image. Previously, a save from a form opened before the image last changed (a second browser tab, or a tab that was not reloaded) still held the previous path; ChambreNoir treated it as a new upload, deleted the current files, then found the old file missing and stored the bare dead path, leaving a broken image. A failed conversion had the same effect. Both now keep the current image and log a warning (`ChambreNoir: Kept the current image, the replacement could not be processed`)
 
 ## v2.2.2 — 2026-07-01
